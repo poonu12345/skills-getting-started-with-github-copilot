@@ -44,7 +44,7 @@ activities = {
 
 @app.get("/")
 def root():
-    return RedirectResponse(url="/static/index.html")
+    return RedirectResponse(url="/static/index.html", status_code=307)
 
 
 @app.get("/activities")
@@ -59,9 +59,12 @@ def signup_for_activity(activity_name: str, email: str):
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    # Get the specific activity
     activity = activities[activity_name]
-
-    # Add student
+    # Prevent duplicate signups
+    if email in activity["participants"]:
+        raise HTTPException(status_code=400, detail="Student already signed up")
+    # Enforce max participants
+    if len(activity["participants"]) >= activity["max_participants"]:
+        raise HTTPException(status_code=400, detail="Activity is full")
     activity["participants"].append(email)
     return {"message": f"Signed up {email} for {activity_name}"}
